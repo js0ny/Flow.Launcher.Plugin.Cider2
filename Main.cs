@@ -4,7 +4,6 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Text;
 using System.IO;
-using System.Threading.Tasks;
 using System.Diagnostics;
 
 namespace Flow.Launcher.Plugin.Cider2
@@ -95,7 +94,7 @@ namespace Flow.Launcher.Plugin.Cider2
                 IcoPath = CiderIcon,
                 Action = c => PostMethod("previous")
             });
-            if (!playback.inLibrary)
+            if (!playback.InLibrary)
             {
                 res.Add(new Result
                 {
@@ -105,7 +104,7 @@ namespace Flow.Launcher.Plugin.Cider2
                     Action = c => PostMethod("add-to-library")
                 });
             }
-            if (!playback.inFavourite)
+            if (!playback.InFavourite)
             {
                 res.Add(new Result
                 {
@@ -132,7 +131,7 @@ namespace Flow.Launcher.Plugin.Cider2
                     Action = c => ToggleFavourite(0)
                 });
             }
-            if (!playback.repeatMode)
+            if (!playback.RepeatMode)
             {
                 res.Add(new Result
                 {
@@ -143,7 +142,7 @@ namespace Flow.Launcher.Plugin.Cider2
                 });
             }
 
-            if (!playback.shuffleMode)
+            if (!playback.ShuffleMode)
             {
                 res.Add(new Result
                 {
@@ -233,10 +232,10 @@ namespace Flow.Launcher.Plugin.Cider2
                     ArtistName = artistName,
                     Name = name,
                     AlbumName = albumName,
-                    shuffleMode = shuffleMode,
-                    repeatMode = repeatMode,
-                    inLibrary = inLibrary,
-                    inFavourite = inFavourite
+                    ShuffleMode = shuffleMode,
+                    RepeatMode = repeatMode,
+                    InLibrary = inLibrary,
+                    InFavourite = inFavourite
                 };
             }
             catch (Exception)
@@ -255,9 +254,9 @@ namespace Flow.Launcher.Plugin.Cider2
         public string ArtistName { get; set; }
         public string Name { get; set; }
         public string AlbumName { get; set; }
-        public bool shuffleMode { get; set; }
-        public bool repeatMode { get; set; }
-        public bool inLibrary { get; set; }
-        public bool inFavourite { get; set; }
+        public bool ShuffleMode { get; set; }
+        public bool RepeatMode { get; set; }
+        public bool InLibrary { get; set; }
+        public bool InFavourite { get; set; }
     }
 }
