@@ -1,24 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using Flow.Launcher.Plugin;
 using System.Text.Json;
-using System.Net;
-using System.Windows;
-using System.DirectoryServices.ActiveDirectory;
+using System.Text;
 using System.IO;
 using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace Flow.Launcher.Plugin.Cider2
 {
 
+    /// <inheritdoc />
     public class Cider2 : IPlugin
     {
         private const string ApiBase = @"http://localhost:10767/api/v1/playback";
         /// <summary>
         /// Temporary icon path generated from the artwork
         /// </summary>
-        public const string TmpIcon = "Images/tmp.png";
+        private const string TmpIcon = "Images/tmp.png";
         private const string CiderIcon = "Images/icon.png";
         private PluginInitContext _context;
 
@@ -31,11 +30,28 @@ namespace Flow.Launcher.Plugin.Cider2
         /// <inheritdoc />
         public List<Result> Query(Query query)
         {
-            if (!GetMethod("active"))
+            try
+            {
+                // if (!GetMethod("active"))
+                if (!IsCiderRunning())
+                {
+                    return new List<Result>
+                    {
+                        new()
+                        {
+                            Title = "Cider2 is not active",
+                            SubTitle = "Please start Cider2",
+                            IcoPath = "Images/icon.png"
+                        }
+                    };
+                }
+
+            }
+            catch (Exception)
             {
                 return new List<Result>
                 {
-                    new Result
+                    new()
                     {
                         Title = "Cider2 is not active",
                         SubTitle = "Please start Cider2",
@@ -46,38 +62,143 @@ namespace Flow.Launcher.Plugin.Cider2
             var playback = GetPlayback();
             _context.API.LogDebug("Cider2", "Got playback info");
             _context.API.LogWarn("Cider2", "Got playback info");
+            var res = new List<Result>();
+
             if (playback == null)
             {
-                return new List<Result>
+                res.Add(new Result
                 {
-                    new Result
-                    {
-                        Title = "No music is playing",
-                        SubTitle = "Please start playing music",
-                        IcoPath = CiderIcon
-                    }
-                };
+                    Title = "No music is playing",
+                    SubTitle = "Please start playing music",
+                    IcoPath = CiderIcon
+                });
+                return res;
             }
-            var res = new List<Result>();
-            var currentPlaying = new Result
+            res.Add(new Result
             {
                 Title = $"{playback.ArtistName} - {playback.Name}",
                 SubTitle = "Click me to toggle play/pause",
                 IcoPath = TmpIcon,
-                Action = c => GetMethod("playpause")
-            };
-            res.Add(currentPlaying);
+                Action = c => PostMethod("playpause")
+            });
+            res.Add(new Result
+            {
+                Title = "Next Track",
+                SubTitle = "Next track",
+                IcoPath = CiderIcon,
+                Action = c => PostMethod("next")
+            });
+            res.Add(new Result
+            {
+                Title = "Previous Track",
+                SubTitle = "Previous track",
+                IcoPath = CiderIcon,
+                Action = c => PostMethod("previous")
+            });
+            if (!playback.inLibrary)
+            {
+                res.Add(new Result
+                {
+                    Title = "Add to Library",
+                    SubTitle = "Add to library",
+                    IcoPath = CiderIcon,
+                    Action = c => PostMethod("add-to-library")
+                });
+            }
+            if (!playback.inFavourite)
+            {
+                res.Add(new Result
+                {
+                    Title = "Add to Favourites",
+                    SubTitle = "Add to favourites",
+                    IcoPath = CiderIcon,
+                    Action = c => ToggleFavourite(1)
+                });
+                res.Add(new Result
+                {
+                    Title = "Less Suggested",
+                    SubTitle = "Mark as less suggested",
+                    IcoPath = CiderIcon,
+                    Action = c => ToggleFavourite(-1)
+                });
+            }
+            else
+            {
+                res.Add(new Result
+                {
+                    Title = "Remove from Favourites",
+                    SubTitle = "Remove from favourites",
+                    IcoPath = CiderIcon,
+                    Action = c => ToggleFavourite(0)
+                });
+            }
+            if (!playback.repeatMode)
+            {
+                res.Add(new Result
+                {
+                    Title = "Repeat mode",
+                    SubTitle = "Toggle repeat mode",
+                    IcoPath = CiderIcon,
+                    Action = c => PostMethod("toggle-repeat")
+                });
+            }
+
+            if (!playback.shuffleMode)
+            {
+                res.Add(new Result
+                {
+                    Title = "Shuffle mode",
+                    SubTitle = "Toggle shuffle mode",
+                    IcoPath = CiderIcon,
+                    Action = c => PostMethod("toggle-shuffle")
+                });
+            }
             return res;
         }
 
-        private static bool GetMethod(string method)
+        private static bool IsCiderRunning()
+        {
+            Process[] processes = Process.GetProcessesByName("Cider");
+            return processes.Length > 0;
+        }
+        // private static bool GetMethod(string method)
+        // {
+        //     using HttpClient client = new();
+        //     var response = client.GetAsync($"{ApiBase}/{method}").Result;
+        //     return response.IsSuccessStatusCode;
+        // }
+
+        private static bool PostMethod(string method)
         {
             using HttpClient client = new();
-            var response = client.GetAsync($"{ApiBase}/{method}").Result;
+            var response = client.PostAsync($"{ApiBase}/{method}", null).Result;
             return response.IsSuccessStatusCode;
         }
+        /// <param name="ratingValue"><br/>
+        /// 1 for favourite <br/>
+        /// 0 for not favourite <br/>
+        /// -1 for less suggested
+        /// </param>
+        /// <returns></returns>
+        private static bool ToggleFavourite(int ratingValue)
+        {
+            using HttpClient client = new();
+            var ratingData = new { rating = ratingValue };
+            var json = JsonSerializer.Serialize(ratingData);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            var response = client.PostAsync($"{ApiBase}/set-rating", content).Result;
+            return response.IsSuccessStatusCode;
+        }
+        // private static async Task<(bool repeatMode, bool ShuffleMode)> GetModesAsync()
+        // {
+        //     using HttpClient client = new();
+        //     var repeatTask = client.GetAsync($"{ApiBase}/repeat-mode");
+        //     var shuffleTask = client.GetAsync($"{ApiBase}/shuffle-mode");
+        //     var results = await Task.WhenAll(repeatTask, shuffleTask);
+        //     return (results[0].IsSuccessStatusCode, results[1].IsSuccessStatusCode);
+        // }
 
-        private static Playback GetPlayback()
+        private Playback GetPlayback()
         {
             using HttpClient client = new();
             var response = client.GetAsync($"{ApiBase}/now-playing").Result;
@@ -86,20 +207,42 @@ namespace Flow.Launcher.Plugin.Cider2
             using var doc = JsonDocument.Parse(content);
             var root = doc.RootElement;
             var info = root.GetProperty("info");
-            var artworkUrl = info.GetProperty("artwork").GetProperty("url").GetString();
-            var artistName = info.GetProperty("artistName").GetString();
-            var name = info.GetProperty("name").GetString();
-            var albumName = info.GetProperty("albumName").GetString();
-            using HttpClient imgClient = new();
-            byte[] imgBytes = imgClient.GetByteArrayAsync(artworkUrl).Result;
-            File.WriteAllBytes(TmpIcon, imgBytes);
-            return new Playback
+            try
             {
-                ArtworkUrl = artworkUrl,
-                ArtistName = artistName,
-                Name = name,
-                AlbumName = albumName
-            };
+                var artworkUrl = info.GetProperty("artwork").GetProperty("url").GetString();
+                var artistName = info.GetProperty("artistName").GetString();
+                var name = info.GetProperty("name").GetString();
+                var albumName = info.GetProperty("albumName").GetString();
+                var shuffleMode = info.GetProperty("shuffleMode").GetInt32() == 1;
+                var repeatMode = info.GetProperty("repeatMode").GetInt32() == 1;
+                var inLibrary = info.GetProperty("inLibrary").GetBoolean();
+                var inFavourite = info.GetProperty("inFavorites").GetBoolean();
+                try
+                {
+                    using HttpClient imgClient = new();
+                    byte[] imgBytes = imgClient.GetByteArrayAsync(artworkUrl).Result;
+                    File.WriteAllBytes(TmpIcon, imgBytes);
+                }
+                catch (Exception e)
+                {
+                    _context.API.LogWarn("Cider2", e.ToString());
+                }
+                return new Playback
+                {
+                    ArtworkUrl = artworkUrl,
+                    ArtistName = artistName,
+                    Name = name,
+                    AlbumName = albumName,
+                    shuffleMode = shuffleMode,
+                    repeatMode = repeatMode,
+                    inLibrary = inLibrary,
+                    inFavourite = inFavourite
+                };
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
     }
     /// <summary>
@@ -108,12 +251,13 @@ namespace Flow.Launcher.Plugin.Cider2
     public class Playback
     {
 
-        /// <summary>
-        /// Artwork URL, used to generate the icon
-        /// </summary>
         public string ArtworkUrl { get; set; }
         public string ArtistName { get; set; }
         public string Name { get; set; }
         public string AlbumName { get; set; }
+        public bool shuffleMode { get; set; }
+        public bool repeatMode { get; set; }
+        public bool inLibrary { get; set; }
+        public bool inFavourite { get; set; }
     }
 }
