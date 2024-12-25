@@ -1,0 +1,8 @@
+yaml-language-server: $schema=https://www.flowlauncher.com/schemas/settings-template.schema.json
+Settings:
+  - type: input
+    attributes:
+      name: inputName
+      label: API Token (NOT IMPLEMENTED)
+      description: Leave blank for not using API Token
+      defultValue: ""

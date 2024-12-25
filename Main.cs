@@ -75,8 +75,9 @@ namespace Flow.Launcher.Plugin.Cider2
             }
             res.Add(new Result
             {
-                Title = $"{playback.ArtistName} - {playback.Name}",
-                SubTitle = "Click me to toggle play/pause",
+                // TODO: Use the artwork as the icon
+                SubTitle = $"{playback.ArtistName} - {playback.Name}",
+                Title = "Play/Pause",
                 IcoPath = TmpIcon,
                 Action = c => PostMethod("playpause")
             });
@@ -89,7 +90,7 @@ namespace Flow.Launcher.Plugin.Cider2
             });
             res.Add(new Result
             {
-                Title = "Previous Track",
+                Title = "Previous",
                 SubTitle = "Previous track",
                 IcoPath = CiderIcon,
                 Action = c => PostMethod("previous")
@@ -98,7 +99,7 @@ namespace Flow.Launcher.Plugin.Cider2
             {
                 res.Add(new Result
                 {
-                    Title = "Add to Library",
+                    Title = "Add",
                     SubTitle = "Add to library",
                     IcoPath = CiderIcon,
                     Action = c => PostMethod("add-to-library")
@@ -108,14 +109,14 @@ namespace Flow.Launcher.Plugin.Cider2
             {
                 res.Add(new Result
                 {
-                    Title = "Add to Favourites",
+                    Title = "Favourite",
                     SubTitle = "Add to favourites",
                     IcoPath = CiderIcon,
                     Action = c => ToggleFavourite(1)
                 });
                 res.Add(new Result
                 {
-                    Title = "Less Suggested",
+                    Title = "Dislike",
                     SubTitle = "Mark as less suggested",
                     IcoPath = CiderIcon,
                     Action = c => ToggleFavourite(-1)
@@ -125,7 +126,7 @@ namespace Flow.Launcher.Plugin.Cider2
             {
                 res.Add(new Result
                 {
-                    Title = "Remove from Favourites",
+                    Title = "Remove",
                     SubTitle = "Remove from favourites",
                     IcoPath = CiderIcon,
                     Action = c => ToggleFavourite(0)
