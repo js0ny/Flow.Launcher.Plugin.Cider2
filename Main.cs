@@ -40,7 +40,7 @@ namespace Flow.Launcher.Plugin.Cider2
                         {
                             Title = "Cider2 is not active",
                             SubTitle = "Please start Cider2",
-                            IcoPath = "Images/icon.png"
+                            IcoPath = CiderIcon
                         }
                     };
                 }
@@ -54,7 +54,7 @@ namespace Flow.Launcher.Plugin.Cider2
                     {
                         Title = "Cider2 is not active",
                         SubTitle = "Please start Cider2",
-                        IcoPath = "Images/icon.png"
+                        IcoPath = CiderIcon
                     }
                 };
             }
